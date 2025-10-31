@@ -15,10 +15,10 @@ serve(async (req) => {
     const { messages, mode = 'assessment' } = await req.json();
     console.log('Chat request received:', { mode, messageCount: messages?.length });
     
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      console.error('OPENAI_API_KEY not configured');
-      throw new Error('OPENAI_API_KEY is not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY not configured');
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     // System prompts for different modes
@@ -77,39 +77,45 @@ Be compassionate, clear, and helpful.`
 
     const systemPrompt = systemPrompts[mode as keyof typeof systemPrompts] || systemPrompts.assessment;
 
-    console.log('Calling OpenAI API with mode:', mode);
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    console.log('Calling Lovable AI Gateway with mode:', mode);
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini-2025-08-07',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages
         ],
-        max_completion_tokens: 2000,
         stream: true,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
+      console.error('Lovable AI Gateway error:', response.status, errorText);
       
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
+          JSON.stringify({ error: 'Too many requests. Please wait a moment and try again.' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
-      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'AI usage quota exceeded. Please add credits in Settings > Workspace > Usage.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      throw new Error(`Lovable AI Gateway error: ${response.status} ${errorText}`);
     }
 
-    console.log('Streaming response from OpenAI');
+    console.log('Streaming response from Lovable AI');
     return new Response(response.body, {
       headers: {
         ...corsHeaders,

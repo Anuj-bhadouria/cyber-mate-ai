@@ -26,7 +26,12 @@ export async function streamChat({
     });
 
     if (resp.status === 429) {
-      onError("Rate limit exceeded. Please try again in a moment.");
+      onError("Too many requests. Please wait a moment and try again.");
+      return;
+    }
+
+    if (resp.status === 402) {
+      onError("AI usage quota exceeded. Please add credits in Settings > Workspace > Usage.");
       return;
     }
 
