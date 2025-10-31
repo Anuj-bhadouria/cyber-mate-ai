@@ -6,6 +6,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Shield, AlertTriangle, Newspaper, Phone, Loader2 } from "lucide-react";
 import { streamChat } from "@/utils/chatStream";
 import { useToast } from "@/hooks/use-toast";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -211,10 +213,32 @@ export default function ChatInterface() {
                   >
                     {msg.role === "user" ? "You" : <Shield className="w-4 h-4" />}
                   </div>
-                  <div className="flex-1 prose prose-invert prose-sm max-w-none">
-                    <p className="whitespace-pre-wrap text-foreground leading-relaxed">
+                  <div className="flex-1 text-foreground leading-relaxed">
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({ children }) => <p className="mb-2">{children}</p>,
+                        ul: ({ children }) => <ul className="mb-2 ml-4 list-disc">{children}</ul>,
+                        ol: ({ children }) => <ol className="mb-2 ml-4 list-decimal">{children}</ol>,
+                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                        code: ({ children, ...props }) => {
+                          const isInline = !props.className;
+                          return isInline ? (
+                            <code className="bg-muted px-1 py-0.5 rounded text-sm">{children}</code>
+                          ) : (
+                            <code className="block bg-muted p-2 rounded text-sm my-2 overflow-x-auto">{children}</code>
+                          );
+                        },
+                        pre: ({ children }) => <pre className="bg-muted p-3 rounded my-2 overflow-x-auto">{children}</pre>,
+                        h1: ({ children }) => <h1 className="text-xl font-bold mb-2 mt-4">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-lg font-bold mb-2 mt-3">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-base font-bold mb-2 mt-2">{children}</h3>,
+                        strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                        a: ({ href, children }) => <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                      }}
+                    >
                       {msg.content}
-                    </p>
+                    </ReactMarkdown>
                   </div>
                 </div>
               </Card>
